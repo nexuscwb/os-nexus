@@ -2,10 +2,892 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Nexus Telecom e Informatica </title>
+  <title>Sistema de Ordem de Serviço - Nexus</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --nexus-blue: #0056b3;
+      --nexus-dark-blue: #003366;
+      --nexus-light-blue: #e6f0fa;
+      --nexus-accent: #ff6600;
+      --nexus-gray: #f5f5f5;
+      --nexus-dark-gray: #333333;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      background-color: var(--nexus-gray);
+      color: var(--nexus-dark-gray);
+    }
+    
+    h2, h3 {
+      color: var(--nexus-dark-blue);
+      border-bottom: 2px solid var(--nexus-blue);
+      padding-bottom: 8px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .logo {
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      color: var(--nexus-dark-blue);
+      margin-right: 20px;
+    }
+    
+    .logo .tagline {
+      font-size: 12px;
+      color: var(--nexus-accent);
+      font-weight: normal;
+    }
+    
+    input, select, button, textarea {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--nexus-blue);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0,86,179,0.2);
+    }
+    
+    button {
+      background-color: var(--nexus-blue);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: var(--nexus-dark-blue);
+    }
+    
+    button.secondary {
+      background-color: var(--nexus-gray);
+      color: var(--nexus-dark-gray);
+    }
+    
+    button.secondary:hover {
+      background-color: #e0e0e0;
+    }
+    
+    button.print {
+      background-color: var(--nexus-accent);
+    }
+    
+    button.print:hover {
+      background-color: #e65c00;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    
+    th {
+      background-color: var(--nexus-blue);
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+    
+    tr:nth-child(even) {
+      background-color: var(--nexus-light-blue);
+    }
+    
+    tr:hover {
+      background-color: rgba(0,86,179,0.1);
+    }
+    
+    .row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    .row > div {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .metrics {
+      margin-top: 20px;
+      font-weight: bold;
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .filters {
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    
+    .actions button {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .file-input-label {
+      display: inline-block;
+      padding: 10px;
+      background-color: var(--nexus-gray);
+      color: var(--nexus-dark-gray);
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.3s;
+    }
+    
+    .file-input-label:hover {
+      background-color: #e0e0e0;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+
+    .report-options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .report-options label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .report-options input[type="radio"] {
+      width: auto;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 5px;
+    }
+
+    .pagination button {
+      width: auto;
+      min-width: 30px;
+      padding: 5px 10px;
+    }
+
+    .pagination button.active {
+      background-color: var(--nexus-dark-blue);
+    }
+  </style>
 </head>
 <body>
-  <h1> Bem vindo ao Sistema Nexus - Field </h1>
-  <p>Você está autenticado com sucesso.</p>
+  <!-- Modal para opções de relatório -->
+  <div id="reportModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('reportModal').style.display='none'">&times;</span>
+      <h3>Opções de Relatório</h3>
+      <div class="report-options">
+        <label>
+          <input type="radio" name="reportType" value="date" checked> 
+          Por data específica
+        </label>
+        <input type="text" id="reportDate" placeholder="Digite a data (dd/mm/aaaa)">
+        
+        <label>
+          <input type="radio" name="reportType" value="period"> 
+          Por período
+        </label>
+        <div class="row">
+          <div><input type="text" id="reportStartDate" placeholder="Data início (dd/mm/aaaa)" disabled></div>
+          <div><input type="text" id="reportEndDate" placeholder="Data fim (dd/mm/aaaa)" disabled></div>
+        </div>
+        
+        <label>
+          <input type="radio" name="reportType" value="client"> 
+          Por cliente
+        </label>
+        <input type="text" id="reportClient" placeholder="Digite o nome do cliente" disabled>
+        
+        <label>
+          <input type="radio" name="reportType" value="address"> 
+          Por endereço
+        </label>
+        <input type="text" id="reportAddress" placeholder="Digite parte do endereço" disabled>
+        
+        <button onclick="gerarRelatorio()" class="print">Gerar Relatório</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div style="font-size: 24px;">NEXUS</div>
+      <div class="tagline">Telecom e Informática</div>
+    </div>
+    <h1 style="flex-grow: 1; margin: 0;">Sistema de Ordem de Serviço</h1>
+  </div>
+
+  <h2>Cadastro de Ordem de Serviço</h2>
+
+  <div class="row">
+    <div><input type="text" id="dataAgendamento" placeholder="Data Agendamento (ex: 22/07/2023)" required></div>
+    <div>
+      <select id="periodo" required>
+        <option value="">Período</option>
+        <option>Manhã</option>
+        <option>Tarde</option>
+      </select>
+    </div>
+    <div><input type="text" id="nomeCliente" placeholder="Nome do Cliente" required></div>
+    <div><input type="text" id="endereco" placeholder="Endereço do Cliente" required></div>
+  </div>
+
+  <div class="row">
+    <div><input type="text" id="dataFinalizacao" placeholder="Data de Finalização (opcional)"></div>
+    <div>
+      <select id="atividade">
+        <option value="">Atividade</option>
+        <option>MIGRAÇÃO</option>
+        <option>INSTALAÇÃO</option>
+        <option>MANUTENÇÃO</option>
+        <option>RETIRADA</option>
+        <option>VT</option>
+      </select>
+    </div>
+    <div>
+      <select id="status">
+        <option value="">Status</option>
+        <option>ENTREGUE</option>
+        <option>CANCELADO</option>
+        <option>AGUARDANDO</option>
+      </select>
+    </div>
+    <div><textarea id="observacao" placeholder="Observações"></textarea></div>
+  </div>
+
+  <div class="actions">
+    <button onclick="salvarOS()">Salvar OS</button>
+    <button onclick="limparFormulario()" class="secondary">Limpar</button>
+    <button onclick="exportarCSV()">Exportar CSV</button>
+    <button onclick="exportarJSON()">Exportar JSON</button>
+    <button onclick="document.getElementById('reportModal').style.display='block'" class="print">Gerar Relatório</button>
+    <label for="importarCSV" class="file-input-label">Importar CSV</label>
+    <input type="file" id="importarCSV" accept=".csv" class="file-input" onchange="importarCSV()">
+    <label for="importarJSON" class="file-input-label">Importar JSON</label>
+    <input type="file" id="importarJSON" accept=".json" class="file-input" onchange="importarJSON()">
+  </div>
+
+  <div class="filters">
+    <h3>Filtros Avançados</h3>
+    <div class="row">
+      <div><input type="text" id="filtroNome" placeholder="Filtrar por nome" onkeyup="carregarTabela()"></div>
+      <div><input type="text" id="filtroEndereco" placeholder="Filtrar por endereço" onkeyup="carregarTabela()"></div>
+      <div><input type="text" id="filtroDataInicio" placeholder="Data início (dd/mm/aaaa)" onchange="carregarTabela()"></div>
+      <div><input type="text" id="filtroDataFim" placeholder="Data fim (dd/mm/aaaa)" onchange="carregarTabela()"></div>
+      <div>
+        <select id="filtroStatus" onchange="carregarTabela()">
+          <option value="">Todos status</option>
+          <option>ENTREGUE</option>
+          <option>CANCELADO</option>
+          <option>AGUARDANDO</option>
+        </select>
+      </div>
+      <div>
+        <select id="filtroAtividade" onchange="carregarTabela()">
+          <option value="">Todas atividades</option>
+          <option>MIGRAÇÃO</option>
+          <option>INSTALAÇÃO</option>
+          <option>MANUTENÇÃO</option>
+          <option>RETIRADA</option>
+          <option>VT</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <h3>Métricas</h3>
+  <div class="metrics" id="metricas"></div>
+
+  <h3>Ordens de Serviço Registradas</h3>
+  <div style="overflow-x: auto;">
+    <table id="tabelaOS">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Período</th>
+          <th>Cliente</th>
+          <th>Endereço</th>
+          <th>Finalização</th>
+          <th>Atividade</th>
+          <th>Status</th>
+          <th>Observação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="pagination" id="paginacao"></div>
+
+  <script>
+    let indiceEdicao = null;
+    let paginaAtual = 1;
+    const itensPorPagina = 20;
+
+    // Função para formatar data no padrão brasileiro
+    function formatarData(dataStr) {
+      if (!dataStr) return null;
+      
+      const partes = dataStr.split('/');
+      if (partes.length !== 3) return null;
+      
+      return new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+    }
+
+    // Função para comparar datas no formato brasileiro
+    function compararDatas(dataStr1, dataStr2) {
+      const data1 = formatarData(dataStr1);
+      const data2 = formatarData(dataStr2);
+      
+      if (!data1 || !data2) return 0;
+      return data1.getTime() - data2.getTime();
+    }
+
+    // Ativa/desativa campos de filtro conforme seleção
+    document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        document.getElementById('reportDate').disabled = this.value !== 'date';
+        document.getElementById('reportStartDate').disabled = this.value !== 'period';
+        document.getElementById('reportEndDate').disabled = this.value !== 'period';
+        document.getElementById('reportClient').disabled = this.value !== 'client';
+        document.getElementById('reportAddress').disabled = this.value !== 'address';
+      });
+    });
+
+    function salvarOS() {
+      const novaOS = {
+        data: document.getElementById('dataAgendamento').value,
+        periodo: document.getElementById('periodo').value,
+        nome: document.getElementById('nomeCliente').value.toUpperCase(),
+        endereco: document.getElementById('endereco').value,
+        finalizacao: document.getElementById('dataFinalizacao').value,
+        atividade: document.getElementById('atividade').value,
+        status: document.getElementById('status').value,
+        observacao: document.getElementById('observacao').value
+      };
+
+      // Validação básica
+      if (!novaOS.data || !novaOS.periodo || !novaOS.nome || !novaOS.endereco) {
+        alert("Por favor, preencha todos os campos obrigatórios!");
+        return;
+      }
+
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+
+      if (indiceEdicao !== null) {
+        osList[indiceEdicao] = novaOS;
+        indiceEdicao = null;
+      } else {
+        osList.push(novaOS);
+      }
+
+      localStorage.setItem('osList', JSON.stringify(osList));
+      limparFormulario();
+      carregarTabela();
+    }
+
+    function editarOS(index) {
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+      const os = osList[index];
+      
+      document.getElementById('dataAgendamento').value = os.data;
+      document.getElementById('periodo').value = os.periodo;
+      document.getElementById('nomeCliente').value = os.nome;
+      document.getElementById('endereco').value = os.endereco;
+      document.getElementById('dataFinalizacao').value = os.finalizacao;
+      document.getElementById('atividade').value = os.atividade;
+      document.getElementById('status').value = os.status;
+      document.getElementById('observacao').value = os.observacao;
+
+      indiceEdicao = index;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function limparFormulario() {
+      document.querySelectorAll('#dataAgendamento, #periodo, #nomeCliente, #endereco, #dataFinalizacao, #atividade, #status, #observacao').forEach(el => el.value = '');
+      indiceEdicao = null;
+    }
+
+    function carregarTabela(pagina = 1) {
+      paginaAtual = pagina;
+      const filtroNome = document.getElementById('filtroNome').value.toUpperCase();
+      const filtroEndereco = document.getElementById('filtroEndereco').value.toUpperCase();
+      const filtroDataInicio = document.getElementById('filtroDataInicio').value;
+      const filtroDataFim = document.getElementById('filtroDataFim').value;
+      const filtroStatus = document.getElementById('filtroStatus').value;
+      const filtroAtividade = document.getElementById('filtroAtividade').value;
+      
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+      const tbody = document.querySelector('#tabelaOS tbody');
+      tbody.innerHTML = '';
+
+      const metricas = { ENTREGUE: 0, CANCELADO: 0, AGUARDANDO: 0 };
+
+      // Ordena por data (mais recente primeiro)
+      const osListOrdenada = [...osList].sort((a, b) => {
+        return compararDatas(b.data, a.data);
+      });
+
+      // Filtra os dados
+      const osFiltradas = osListOrdenada.filter(os => {
+        const nomeMatch = !filtroNome || os.nome.includes(filtroNome);
+        const enderecoMatch = !filtroEndereco || os.endereco.toUpperCase().includes(filtroEndereco);
+        const dataMatch = 
+          (!filtroDataInicio || compararDatas(os.data, filtroDataInicio) >= 0) &&
+          (!filtroDataFim || compararDatas(os.data, filtroDataFim) <= 0);
+        const statusMatch = !filtroStatus || os.status === filtroStatus;
+        const atividadeMatch = !filtroAtividade || os.atividade === filtroAtividade;
+
+        return nomeMatch && enderecoMatch && dataMatch && statusMatch && atividadeMatch;
+      });
+
+      // Calcula a paginação
+      const totalPaginas = Math.ceil(osFiltradas.length / itensPorPagina);
+      const inicio = (pagina - 1) * itensPorPagina;
+      const fim = inicio + itensPorPagina;
+      const osPagina = osFiltradas.slice(inicio, fim);
+
+      // Preenche a tabela com os dados da página atual
+      osPagina.forEach((os, index) => {
+        const linha = tbody.insertRow();
+        linha.insertCell().textContent = os.data;
+        linha.insertCell().textContent = os.periodo;
+        linha.insertCell().textContent = os.nome;
+        linha.insertCell().textContent = os.endereco;
+        linha.insertCell().textContent = os.finalizacao || '-';
+        linha.insertCell().textContent = os.atividade || '-';
+        linha.insertCell().textContent = os.status || '-';
+        linha.insertCell().textContent = os.observacao || '-';
+
+        const celulaAcao = linha.insertCell();
+        const btnEditar = document.createElement('button');
+        btnEditar.textContent = 'Editar';
+        btnEditar.onclick = () => editarOS(osList.indexOf(os));
+        btnEditar.style.margin = '2px';
+        btnEditar.style.padding = '5px 10px';
+        btnEditar.style.backgroundColor = 'var(--nexus-blue)';
+        btnEditar.style.color = 'white';
+        btnEditar.style.border = 'none';
+        btnEditar.style.borderRadius = '4px';
+        btnEditar.style.cursor = 'pointer';
+        
+        const btnExcluir = document.createElement('button');
+        btnExcluir.textContent = 'Excluir';
+        btnExcluir.onclick = () => excluirOS(osList.indexOf(os));
+        btnExcluir.style.margin = '2px';
+        btnExcluir.style.padding = '5px 10px';
+        btnExcluir.style.backgroundColor = '#dc3545';
+        btnExcluir.style.color = 'white';
+        btnExcluir.style.border = 'none';
+        btnExcluir.style.borderRadius = '4px';
+        btnExcluir.style.cursor = 'pointer';
+
+        celulaAcao.appendChild(btnEditar);
+        celulaAcao.appendChild(btnExcluir);
+      });
+
+      // Atualiza as métricas
+      osFiltradas.forEach(os => {
+        if (os.status in metricas) {
+          metricas[os.status]++;
+        }
+      });
+
+      document.getElementById('metricas').innerHTML = `
+        <div style="display: flex; justify-content: space-around;">
+          <div style="color: #28a745;">✅ Entregues: ${metricas.ENTREGUE}</div>
+          <div style="color: #ffc107;">🕒 Aguardando: ${metricas.AGUARDANDO}</div>
+          <div style="color: #dc3545;">❌ Canceladas: ${metricas.CANCELADO}</div>
+          <div style="color: var(--nexus-dark-blue);">📊 Total: ${osFiltradas.length}</div>
+        </div>
+      `;
+
+      // Atualiza a paginação
+      atualizarPaginacao(totalPaginas);
+    }
+
+    function atualizarPaginacao(totalPaginas) {
+      const paginacao = document.getElementById('paginacao');
+      paginacao.innerHTML = '';
+
+      if (totalPaginas <= 1) return;
+
+      // Botão Anterior
+      const btnAnterior = document.createElement('button');
+      btnAnterior.textContent = '«';
+      btnAnterior.disabled = paginaAtual === 1;
+      btnAnterior.onclick = () => carregarTabela(paginaAtual - 1);
+      paginacao.appendChild(btnAnterior);
+
+      // Números das páginas
+      const inicio = Math.max(1, paginaAtual - 2);
+      const fim = Math.min(totalPaginas, paginaAtual + 2);
+
+      for (let i = inicio; i <= fim; i++) {
+        const btnPagina = document.createElement('button');
+        btnPagina.textContent = i;
+        btnPagina.className = paginaAtual === i ? 'active' : '';
+        btnPagina.onclick = () => carregarTabela(i);
+        paginacao.appendChild(btnPagina);
+      }
+
+      // Botão Próximo
+      const btnProximo = document.createElement('button');
+      btnProximo.textContent = '»';
+      btnProximo.disabled = paginaAtual === totalPaginas;
+      btnProximo.onclick = () => carregarTabela(paginaAtual + 1);
+      paginacao.appendChild(btnProximo);
+    }
+
+    function exportarCSV() {
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+      let csv = 'Data,Período,Cliente,Endereço,Finalização,Atividade,Status,Observação\n';
+      osList.forEach(os => {
+        csv += `"${os.data}","${os.periodo}","${os.nome}","${os.endereco}","${os.finalizacao || ''}","${os.atividade || ''}","${os.status || ''}","${os.observacao || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `ordens_de_servico_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function importarCSV() {
+      const fileInput = document.getElementById('importarCSV');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const conteudo = e.target.result;
+        const linhas = conteudo.split('\n').filter(linha => linha.trim() !== '');
+        
+        if (linhas.length < 2) {
+          alert("O arquivo CSV está vazio ou não contém dados válidos");
+          return;
+        }
+
+        const osList = [];
+
+        for (let i = 1; i < linhas.length; i++) {
+          const valores = linhas[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+          
+          if (valores.length >= 8) {
+            osList.push({
+              data: valores[0],
+              periodo: valores[1],
+              nome: valores[2].toUpperCase(),
+              endereco: valores[3],
+              finalizacao: valores[4] || '',
+              atividade: valores[5] || '',
+              status: valores[6] || '',
+              observacao: valores[7] || ''
+            });
+          }
+        }
+
+        if (confirm(`Deseja importar ${osList.length} ordens de serviço? Isso substituirá os dados atuais.`)) {
+          localStorage.setItem('osList', JSON.stringify(osList));
+          carregarTabela();
+          alert(`CSV importado com sucesso! ${osList.length} ordens de serviço carregadas.`);
+        }
+      };
+
+      reader.onerror = function() {
+        alert("Erro ao ler o arquivo CSV");
+      };
+
+      reader.readAsText(file, 'UTF-8');
+      fileInput.value = '';
+    }
+
+    function exportarJSON() {
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+      const blob = new Blob([JSON.stringify(osList, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `ordens_de_servico_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function importarJSON() {
+      const fileInput = document.getElementById('importarJSON');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const dadosImportados = JSON.parse(e.target.result);
+          if (Array.isArray(dadosImportados)) {
+            if (confirm(`Deseja importar ${dadosImportados.length} ordens de serviço? Isso substituirá os dados atuais.`)) {
+              localStorage.setItem('osList', JSON.stringify(dadosImportados));
+              carregarTabela();
+              alert(`Dados importados com sucesso! ${dadosImportados.length} registros carregados.`);
+            }
+          } else {
+            alert("Arquivo JSON inválido. Deve conter um array de ordens de serviço.");
+          }
+        } catch (error) {
+          alert("Erro ao importar JSON: " + error.message);
+        }
+      };
+      reader.readAsText(file);
+      fileInput.value = '';
+    }
+
+    function gerarRelatorio() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Obtém o tipo de relatório selecionado
+      const reportType = document.querySelector('input[name="reportType"]:checked').value;
+      let osFiltradas = [];
+      let tituloRelatorio = '';
+      const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+      
+      // Filtra as OS conforme o tipo selecionado
+      switch(reportType) {
+        case 'date':
+          const dataRelatorio = document.getElementById('reportDate').value;
+          if (!dataRelatorio) {
+            alert("Por favor, informe a data para o relatório!");
+            return;
+          }
+          osFiltradas = osList.filter(os => os.data === dataRelatorio);
+          tituloRelatorio = `Relatório Diário - ${dataRelatorio}`;
+          break;
+          
+        case 'period':
+          const dataInicio = document.getElementById('reportStartDate').value;
+          const dataFim = document.getElementById('reportEndDate').value;
+          if (!dataInicio || !dataFim) {
+            alert("Por favor, informe o período completo (data início e data fim)!");
+            return;
+          }
+          osFiltradas = osList.filter(os => 
+            compararDatas(os.data, dataInicio) >= 0 && 
+            compararDatas(os.data, dataFim) <= 0
+          );
+          tituloRelatorio = `Relatório Período - ${dataInicio} a ${dataFim}`;
+          break;
+          
+        case 'client':
+          const cliente = document.getElementById('reportClient').value.toUpperCase();
+          if (!cliente) {
+            alert("Por favor, informe o nome do cliente!");
+            return;
+          }
+          osFiltradas = osList.filter(os => os.nome.includes(cliente));
+          tituloRelatorio = `Relatório por Cliente - ${cliente}`;
+          break;
+          
+        case 'address':
+          const endereco = document.getElementById('reportAddress').value.toUpperCase();
+          if (!endereco) {
+            alert("Por favor, informe parte do endereço!");
+            return;
+          }
+          osFiltradas = osList.filter(os => os.endereco.toUpperCase().includes(endereco));
+          tituloRelatorio = `Relatório por Endereço - ${endereco}`;
+          break;
+      }
+      
+      if (osFiltradas.length === 0) {
+        alert("Nenhuma ordem de serviço encontrada com os critérios selecionados!");
+        return;
+      }
+      
+      // Adiciona a logo e cabeçalho
+      doc.setFontSize(16);
+      doc.setTextColor(0, 86, 179); // Cor azul da Nexus
+      doc.text('NEXUS', 14, 20);
+      doc.setFontSize(10);
+      doc.text('Telecom e Informática', 14, 26);
+      
+      // Título do relatório
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text(tituloRelatorio, 14, 40);
+      doc.setFontSize(10);
+      doc.text(`Total de OS: ${osFiltradas.length}`, 14, 46);
+      
+      // Cabeçalho da tabela
+      const headers = [
+        "Data",
+        "Período",
+        "Cliente",
+        "Endereço",
+        "Atividade",
+        "Status"
+      ];
+      
+      // Dados da tabela (formatados de forma mais limpa)
+      const data = osFiltradas.map(os => [
+        os.data,
+        os.periodo,
+        os.nome.length > 20 ? os.nome.substring(0, 17) + '...' : os.nome,
+        os.endereco.length > 25 ? os.endereco.substring(0, 22) + '...' : os.endereco,
+        os.atividade || '-',
+        os.status || '-'
+      ]);
+      
+      // Adiciona a tabela ao PDF com formatação mais limpa
+      doc.autoTable({
+        startY: 50,
+        head: [headers],
+        body: data,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [0, 86, 179], // Cor azul da Nexus
+          textColor: 255,
+          fontSize: 9
+        },
+        bodyStyles: {
+          fontSize: 8,
+          cellPadding: 3,
+          lineWidth: 0.1
+        },
+        columnStyles: {
+          0: { cellWidth: 18, halign: 'center' },
+          1: { cellWidth: 15, halign: 'center' },
+          2: { cellWidth: 35 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 20, halign: 'center' },
+          5: { cellWidth: 15, halign: 'center' }
+        },
+        margin: { top: 50 },
+        styles: {
+          overflow: 'linebreak',
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        }
+      });
+      
+      // Fecha o modal
+      document.getElementById('reportModal').style.display = 'none';
+      
+      // Salva o PDF
+      doc.save(`Relatorio_OS_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+    }
+
+    function excluirOS(index) {
+      if (confirm("Tem certeza que deseja excluir esta Ordem de Serviço?")) {
+        const osList = JSON.parse(localStorage.getItem('osList') || '[]');
+        osList.splice(index, 1);
+        localStorage.setItem('osList', JSON.stringify(osList));
+        carregarTabela();
+        alert("Ordem de Serviço excluída com sucesso!");
+      }
+    }
+
+    // Carrega a tabela quando a página é aberta
+    document.addEventListener('DOMContentLoaded', function() {
+      carregarTabela();
+      
+      // Fecha o modal se clicar fora dele
+      window.onclick = function(event) {
+        const modal = document.getElementById('reportModal');
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      }
+    });
+  </script>
 </body>
 </html>
