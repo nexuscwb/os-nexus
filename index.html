@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -70,7 +71,6 @@
 </head>
 <body>
   <img src="logo-nexus.jpg" alt="Logo Nexus" class="logo" />
-
   <div id="loginSection">
     <h2>Login</h2>
     <input type="email" id="email" placeholder="Email" required />
@@ -85,24 +85,19 @@
     <h2>Nova Ordem</h2>
     <form id="formOS" onsubmit="event.preventDefault(); salvarOuAtualizarOrdem();">
       <input type="hidden" id="osId" />
-
-      <label for="cliente">Cliente:</label>
+      <label>Cliente:</label>
       <input type="text" id="cliente" required />
-
-      <label for="descricao">Descrição:</label>
+      <label>Descrição:</label>
       <textarea id="descricao" required></textarea>
-
-      <label for="tecnico">Técnico:</label>
+      <label>Técnico:</label>
       <input type="text" id="tecnico" required />
-
-      <label for="status">Status:</label>
+      <label>Status:</label>
       <select id="status">
         <option value="pendente">Pendente</option>
         <option value="em_andamento">Em andamento</option>
         <option value="concluida">Concluída</option>
       </select>
-
-      <button type="submit" id="btnSalvar">Salvar</button>
+      <button type="submit">Salvar</button>
     </form>
 
     <h2>Filtros</h2>
@@ -118,40 +113,38 @@
     <ul id="listaOrdens"></ul>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database.js"></script>
+  <!-- Firebase Modular v9 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { getDatabase, ref, push, update, remove, get } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-database.js";
 
-  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDl44w_xRjnOO3yz7zs0HeBTTfeifGIoP8",
       authDomain: "database-nexus.firebaseapp.com",
       databaseURL: "https://database-nexus-default-rtdb.firebaseio.com",
       projectId: "database-nexus",
-      storageBucket: "database-nexus.firebasestorage.app",
+      storageBucket: "database-nexus.appspot.com",
       messagingSenderId: "1023176085014",
       appId: "1:1023176085014:web:ce58a963e9cb5298012f37",
       measurementId: "G-KXFVK6PD48"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getDatabase();
 
     let usuarioId = null;
     let emailUsuario = null;
     let isAdmin = false;
 
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (user) {
         usuarioId = user.uid;
         emailUsuario = user.email;
         isAdmin = emailUsuario.endsWith("@nexus.com") || emailUsuario === "admin@nexus.com";
-
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('appSection').classList.remove('hidden');
-
         document.getElementById('formOS').style.display = isAdmin ? 'block' : 'none';
         atualizarLista();
       } else {
@@ -161,28 +154,24 @@
       }
     });
 
-    function login() {
+    window.login = () => {
       const email = document.getElementById('email').value;
       const senha = document.getElementById('password').value;
-      auth.signInWithEmailAndPassword(email, senha).catch(error => {
-        alert("Erro no login: " + error.message);
-        console.error(error);
-      });
-    }
+      signInWithEmailAndPassword(auth, email, senha)
+        .catch(error => alert("Erro no login: " + error.message));
+    };
 
-    function resetarSenha() {
+    window.resetarSenha = () => {
       const email = document.getElementById('email').value;
-      if (!email) return alert("Digite o e-mail para redefinir a senha.");
-      auth.sendPasswordResetEmail(email)
-        .then(() => alert("Email de redefinição enviado."))
+      if (!email) return alert("Digite o e-mail para redefinir.");
+      sendPasswordResetEmail(auth, email)
+        .then(() => alert("E-mail enviado."))
         .catch(error => alert("Erro: " + error.message));
-    }
+    };
 
-    function logout() {
-      auth.signOut();
-    }
+    window.logout = () => signOut(auth);
 
-    function salvarOuAtualizarOrdem() {
+    window.salvarOuAtualizarOrdem = () => {
       const id = document.getElementById("osId").value;
       const dadosOS = {
         cliente: document.getElementById("cliente").value,
@@ -194,25 +183,25 @@
       };
 
       if (id) {
-        db.ref("ordens/" + id).update(dadosOS);
+        update(ref(db, "ordens/" + id), dadosOS);
       } else {
-        db.ref("ordens").push(dadosOS);
+        push(ref(db, "ordens"), dadosOS);
       }
+
       document.getElementById("formOS").reset();
       atualizarLista();
-    }
+    };
 
-    function atualizarLista() {
-      db.ref("ordens").once("value", (snapshot) => {
-        const lista = document.getElementById("listaOrdens");
-        lista.innerHTML = "";
-        const tecnicoFiltro = document.getElementById("filtroTecnico").value.toLowerCase();
-        const statusFiltro = document.getElementById("filtroStatus").value;
+    window.atualizarLista = () => {
+      const tecnicoFiltro = document.getElementById("filtroTecnico").value.toLowerCase();
+      const statusFiltro = document.getElementById("filtroStatus").value;
+      const lista = document.getElementById("listaOrdens");
+      lista.innerHTML = "";
 
+      get(ref(db, "ordens")).then(snapshot => {
         snapshot.forEach(child => {
           const os = child.val();
           const key = child.key;
-
           if (
             (tecnicoFiltro === '' || os.tecnico.toLowerCase().includes(tecnicoFiltro)) &&
             (statusFiltro === '' || os.status === statusFiltro)
@@ -222,47 +211,49 @@
               <strong>${os.cliente}</strong> (${os.tecnico})<br>
               ${os.descricao}<br>
               <em>${os.data} - ${os.status}</em><br>
-              ${isAdmin ? `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Editar</button>
-              <button onclick="excluirOrdem('${key}')">Excluir</button>` :
-              `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Preencher Observações</button>`}
+              ${isAdmin ?
+                `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Editar</button>
+                 <button onclick="excluirOrdem('${key}')">Excluir</button>` :
+                `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Preencher Observações</button>`}
             `;
             lista.appendChild(li);
           }
         });
       });
-    }
+    };
 
-    function editarOrdem(id, os) {
+    window.editarOrdem = (id, os) => {
       document.getElementById("osId").value = id;
       document.getElementById("cliente").value = os.cliente;
       document.getElementById("descricao").value = os.descricao;
       document.getElementById("tecnico").value = os.tecnico;
       document.getElementById("status").value = os.status;
 
+      const statusSelect = document.getElementById("status");
       if (!isAdmin) {
         document.getElementById("cliente").disabled = true;
         document.getElementById("tecnico").disabled = true;
         document.getElementById("descricao").disabled = false;
-        document.getElementById("status").innerHTML = `
+        statusSelect.innerHTML = `
           <option value="cancelado">Cancelado</option>
           <option value="entregue">Entregue</option>`;
       } else {
         document.getElementById("cliente").disabled = false;
         document.getElementById("tecnico").disabled = false;
         document.getElementById("descricao").disabled = false;
-        document.getElementById("status").innerHTML = `
+        statusSelect.innerHTML = `
           <option value="pendente">Pendente</option>
           <option value="em_andamento">Em andamento</option>
           <option value="concluida">Concluída</option>`;
       }
-    }
+    };
 
-    function excluirOrdem(id) {
+    window.excluirOrdem = (id) => {
       if (isAdmin && confirm("Deseja excluir esta ordem?")) {
-        db.ref("ordens/" + id).remove();
+        remove(ref(db, "ordens/" + id));
         atualizarLista();
       }
-    }
+    };
   </script>
 </body>
 </html>
