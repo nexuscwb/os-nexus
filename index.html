@@ -1,122 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OS Nexus com Firebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nexus OS</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #00458C;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    #loginSection, #appSection {
-      background: #fff;
-      color: #000;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, textarea, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #F58220;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #d96d00;
-    }
-    ul {
-      margin-top: 30px;
-      padding: 0;
-      list-style-type: none;
-    }
-    li {
-      background: #f0f0f0;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      color: #000;
-    }
-    .hidden {
-      display: none;
-    }
-    .logo {
-      width: 200px;
-      margin-bottom: 20px;
-    }
+    body { font-family: sans-serif; margin: 20px; background: #111; color: #fff; }
+    .hidden { display: none; }
+    input, select, button { margin: 5px; padding: 5px; }
+    li { background: #222; margin: 5px 0; padding: 10px; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <img src="logo-nexus.jpg" alt="Logo Nexus" class="logo" />
 
   <div id="loginSection">
     <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Senha" required />
+    <input type="email" id="email" placeholder="E-mail" value="admin@nexus.com"><br>
+    <input type="password" id="password" placeholder="Senha" value="segredo123"><br>
     <button onclick="login()">Entrar</button>
-    <button onclick="resetarSenha()">Esqueci a Senha</button>
+    <button onclick="resetarSenha()">Esqueci a senha</button>
   </div>
 
   <div id="appSection" class="hidden">
     <button onclick="logout()">Sair</button>
+    <h2>Ordem de Serviço</h2>
 
-    <h2>Nova Ordem</h2>
-    <form id="formOS" onsubmit="event.preventDefault(); salvarOuAtualizarOrdem();">
-      <input type="hidden" id="osId" />
-      <label for="cliente">Cliente:</label>
-      <input type="text" id="cliente" required />
-      <label for="descricao">Descrição:</label>
-      <textarea id="descricao" required></textarea>
-      <label for="tecnico">Técnico:</label>
-      <input type="text" id="tecnico" required />
-      <label for="status">Status:</label>
+    <form id="formOS">
+      <input type="hidden" id="osId">
+      <input type="text" id="cliente" placeholder="Cliente"><br>
+      <input type="text" id="descricao" placeholder="Descrição"><br>
+      <input type="text" id="tecnico" placeholder="Técnico"><br>
       <select id="status">
         <option value="pendente">Pendente</option>
         <option value="em_andamento">Em andamento</option>
         <option value="concluida">Concluída</option>
-      </select>
-      <button type="submit">Salvar</button>
+      </select><br>
+      <button type="button" onclick="salvarOuAtualizarOrdem()">Salvar</button>
     </form>
 
-    <h2>Filtros</h2>
-    <input type="text" id="filtroTecnico" placeholder="Filtrar por técnico" oninput="atualizarLista()" />
+    <h3>Filtros</h3>
+    <input type="text" id="filtroTecnico" placeholder="Filtrar por técnico" oninput="atualizarLista()">
     <select id="filtroStatus" onchange="atualizarLista()">
-      <option value="">Todos os status</option>
+      <option value="">Todos</option>
       <option value="pendente">Pendente</option>
       <option value="em_andamento">Em andamento</option>
       <option value="concluida">Concluída</option>
+      <option value="cancelado">Cancelado</option>
+      <option value="entregue">Entregue</option>
     </select>
 
-    <h2>Ordens</h2>
     <ul id="listaOrdens"></ul>
   </div>
 
-  <!-- Firebase Clássico (v8) - Compatível com GitHub Pages -->
+  <!-- Firebase scripts v8 (compatível com GitHub Pages) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDl44w_xRjnOO3yz7zs0HeBTTfeifGIoP8",
@@ -142,7 +82,6 @@
         usuarioId = user.uid;
         emailUsuario = user.email;
         isAdmin = emailUsuario.endsWith("@nexus.com") || emailUsuario === "admin@nexus.com";
-
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('appSection').classList.remove('hidden');
         document.getElementById('formOS').style.display = isAdmin ? 'block' : 'none';
@@ -158,7 +97,7 @@
       const email = document.getElementById('email').value;
       const senha = document.getElementById('password').value;
       auth.signInWithEmailAndPassword(email, senha)
-        .catch(error => alert("Erro no login: " + error.message));
+        .catch(error => alert("Erro no login: " + JSON.stringify(error)));
     }
 
     function resetarSenha() {
@@ -204,7 +143,6 @@
         snapshot.forEach(child => {
           const os = child.val();
           const key = child.key;
-
           if (
             (tecnicoFiltro === '' || os.tecnico.toLowerCase().includes(tecnicoFiltro)) &&
             (statusFiltro === '' || os.status === statusFiltro)
@@ -258,5 +196,6 @@
       }
     }
   </script>
+
 </body>
 </html>
