@@ -5,23 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OS Nexus com Firebase</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label { display: block; margin-top: 10px; }
-    input, textarea, select { width: 100%; padding: 8px; margin-top: 4px; }
-    button { margin-top: 15px; padding: 10px 20px; }
-    ul { margin-top: 30px; padding: 0; list-style-type: none; }
-    li { background: #f0f0f0; margin-bottom: 10px; padding: 10px; border-radius: 6px; }
-    .hidden { display: none; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #00458C;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #loginSection, #appSection {
+      background: #fff;
+      color: #000;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #F58220;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #d96d00;
+    }
+    ul {
+      margin-top: 30px;
+      padding: 0;
+      list-style-type: none;
+    }
+    li {
+      background: #f0f0f0;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      color: #000;
+    }
+    .hidden {
+      display: none;
+    }
+    .logo {
+      width: 200px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>Ordem de Serviço - Nexus</h1>
+  <img src="logo-nexus.jpg" alt="Logo Nexus" class="logo" />
 
   <div id="loginSection">
     <h2>Login</h2>
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Senha" required />
     <button onclick="login()">Entrar</button>
+    <button onclick="resetarSenha()">Esqueci a Senha</button>
   </div>
 
   <div id="appSection" class="hidden">
@@ -47,7 +102,7 @@
         <option value="concluida">Concluída</option>
       </select>
 
-      <button type="submit">Salvar</button>
+      <button type="submit" id="btnSalvar">Salvar</button>
     </form>
 
     <h2>Filtros</h2>
@@ -69,15 +124,15 @@
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database.js"></script>
 
   <script>
-    // Configuração Firebase atualizada
     const firebaseConfig = {
       apiKey: "AIzaSyDl44w_xRjnOO3yz7zs0HeBTTfeifGIoP8",
       authDomain: "database-nexus.firebaseapp.com",
       databaseURL: "https://database-nexus-default-rtdb.firebaseio.com",
       projectId: "database-nexus",
-      storageBucket: "database-nexus.appspot.com",
-      messagingSenderId: "",
-      appId: ""
+      storageBucket: "database-nexus.firebasestorage.app",
+      messagingSenderId: "1023176085014",
+      appId: "1:1023176085014:web:ce58a963e9cb5298012f37",
+      measurementId: "G-KXFVK6PD48"
     };
 
     const app = firebase.initializeApp(firebaseConfig);
@@ -85,12 +140,19 @@
     const db = firebase.database();
 
     let usuarioId = null;
+    let emailUsuario = null;
+    let isAdmin = false;
 
     auth.onAuthStateChanged(user => {
       if (user) {
         usuarioId = user.uid;
+        emailUsuario = user.email;
+        isAdmin = emailUsuario.endsWith("@nexus.com") || emailUsuario === "admin@nexus.com";
+
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('appSection').classList.remove('hidden');
+
+        document.getElementById('formOS').style.display = isAdmin ? 'block' : 'none';
         atualizarLista();
       } else {
         usuarioId = null;
@@ -102,7 +164,18 @@
     function login() {
       const email = document.getElementById('email').value;
       const senha = document.getElementById('password').value;
-      auth.signInWithEmailAndPassword(email, senha).catch(alert);
+      auth.signInWithEmailAndPassword(email, senha).catch(error => {
+        alert("Erro no login: " + error.message);
+        console.error(error);
+      });
+    }
+
+    function resetarSenha() {
+      const email = document.getElementById('email').value;
+      if (!email) return alert("Digite o e-mail para redefinir a senha.");
+      auth.sendPasswordResetEmail(email)
+        .then(() => alert("Email de redefinição enviado."))
+        .catch(error => alert("Erro: " + error.message));
     }
 
     function logout() {
@@ -130,7 +203,7 @@
     }
 
     function atualizarLista() {
-      db.ref("ordens").orderByChild("usuario").equalTo(usuarioId).once("value", (snapshot) => {
+      db.ref("ordens").once("value", (snapshot) => {
         const lista = document.getElementById("listaOrdens");
         lista.innerHTML = "";
         const tecnicoFiltro = document.getElementById("filtroTecnico").value.toLowerCase();
@@ -149,8 +222,9 @@
               <strong>${os.cliente}</strong> (${os.tecnico})<br>
               ${os.descricao}<br>
               <em>${os.data} - ${os.status}</em><br>
-              <button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Editar</button>
-              <button onclick="excluirOrdem('${key}')">Excluir</button>
+              ${isAdmin ? `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Editar</button>
+              <button onclick="excluirOrdem('${key}')">Excluir</button>` :
+              `<button onclick="editarOrdem('${key}', ${JSON.stringify(os).replace(/"/g, '&quot;')})">Preencher Observações</button>`}
             `;
             lista.appendChild(li);
           }
@@ -164,10 +238,27 @@
       document.getElementById("descricao").value = os.descricao;
       document.getElementById("tecnico").value = os.tecnico;
       document.getElementById("status").value = os.status;
+
+      if (!isAdmin) {
+        document.getElementById("cliente").disabled = true;
+        document.getElementById("tecnico").disabled = true;
+        document.getElementById("descricao").disabled = false;
+        document.getElementById("status").innerHTML = `
+          <option value="cancelado">Cancelado</option>
+          <option value="entregue">Entregue</option>`;
+      } else {
+        document.getElementById("cliente").disabled = false;
+        document.getElementById("tecnico").disabled = false;
+        document.getElementById("descricao").disabled = false;
+        document.getElementById("status").innerHTML = `
+          <option value="pendente">Pendente</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluida">Concluída</option>`;
+      }
     }
 
     function excluirOrdem(id) {
-      if (confirm("Deseja excluir esta ordem?")) {
+      if (isAdmin && confirm("Deseja excluir esta ordem?")) {
         db.ref("ordens/" + id).remove();
         atualizarLista();
       }
