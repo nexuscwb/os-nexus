@@ -8,124 +8,166 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
     .hidden { display: none; }
-    .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px #ccc; }
+    .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     h2 { color: #003366; border-bottom: 2px solid #0056b3; padding-bottom: 5px; }
-    input, select, textarea, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-    button { background: #0056b3; color: white; border: none; cursor: pointer; }
-    button:hover { background: #003366; }
+    input, select, textarea, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+    button { background: #0056b3; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #003d82; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     th { background: #0056b3; color: white; }
     .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-group button { flex: 1; }
+    #importExportSection { border: 2px dashed #0056b3; background: #f8f9fa; }
+    .action-btn { padding: 5px 10px; font-size: 14px; margin: 2px; }
+    .edit-btn { background: #ffc107; color: #212529; }
+    .delete-btn { background: #dc3545; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- Tela de Login -->
 <div id="loginSection" class="section">
-  <img src="logo-nexus.jpg" alt="Logo" style="width: 120px; display:block; margin:auto;">
-  <h2 style="text-align:center;">Login Nexus OS</h2>
+  <img src="logo-nexus.jpg" alt="Logo Nexus" style="width: 150px; display: block; margin: 0 auto 20px;">
+  <h2 style="text-align: center;">Login do Sistema Nexus</h2>
   <input type="email" id="email" placeholder="E-mail" value="admin@nexus.com">
   <input type="password" id="password" placeholder="Senha" value="segredo123">
   <button onclick="login()">Entrar</button>
-  <button onclick="resetarSenha()" style="background:#ccc;color:#333;">Esqueci a senha</button>
+  <button onclick="resetarSenha()" style="background: #6c757d;">Esqueci minha senha</button>
 </div>
 
-<!-- APP PRINCIPAL -->
+<!-- Aplicativo Principal (após login) -->
 <div id="appSection" class="hidden">
 
-  <!-- Importação/Exportação (somente admin) -->
+  <!-- Seção de Importação/Exportação (apenas admin) -->
   <div id="importExportSection" class="section hidden">
-    <h2>Importação e Exportação</h2>
-    <input type="file" accept=".csv" id="importCSV">
-    <button onclick="importarCSV()">Importar CSV</button>
-    <button onclick="exportarCSV()">Exportar CSV</button>
+    <h2>📁 Importação/Exportação de Dados</h2>
+    <div style="margin-bottom: 15px;">
+      <label for="importCSV" style="display: block; margin-bottom: 5px; font-weight: bold;">Selecione arquivo CSV:</label>
+      <input type="file" id="importCSV" accept=".csv">
+    </div>
+    <div class="btn-group">
+      <button onclick="importarCSV()" style="background: #28a745;">⬆️ Importar CSV</button>
+      <button onclick="exportarCSV()" style="background: #17a2b8;">⬇️ Exportar CSV</button>
+    </div>
+    <p id="importStatus" style="margin-top: 10px; font-style: italic; color: #6c757d;"></p>
   </div>
 
-  <!-- Painel de Usuários -->
+  <!-- Painel de Usuários (apenas admin) -->
   <div id="painelUsuarios" class="section hidden">
-    <h2>Cadastro de Usuários</h2>
-    <input type="email" id="novoEmail" placeholder="E-mail">
+    <h2>👥 Gerenciamento de Usuários</h2>
+    <input type="email" id="novoEmail" placeholder="E-mail do novo usuário">
     <input type="password" id="novaSenha" placeholder="Senha">
     <select id="nivelAcesso">
       <option value="tecnico">Técnico</option>
       <option value="admin">Administrador</option>
     </select>
-    <button onclick="criarUsuario()">Criar Usuário</button>
+    <button onclick="criarUsuario()">➕ Criar Usuário</button>
   </div>
 
   <!-- Cadastro de OS -->
   <div class="section">
-    <h2>Cadastro de Ordem de Serviço</h2>
+    <h2>📝 Nova Ordem de Serviço</h2>
     <div class="btn-group">
-      <input type="date" id="dataAgendamento" placeholder="Data Agendamento">
-      <select id="periodo"><option>Manhã</option><option>Tarde</option></select>
+      <input type="date" id="dataAgendamento" placeholder="Data de agendamento">
+      <select id="periodo">
+        <option value="Manhã">Manhã</option>
+        <option value="Tarde">Tarde</option>
+      </select>
     </div>
-    <input type="text" id="nomeCliente" placeholder="Nome do Cliente">
-    <input type="text" id="endereco" placeholder="Endereço">
+    <input type="text" id="nomeCliente" placeholder="Nome do cliente">
+    <input type="text" id="endereco" placeholder="Endereço completo">
     <div class="btn-group">
-      <input type="date" id="dataFinalizacao" placeholder="Data Finalização">
+      <input type="date" id="dataFinalizacao" placeholder="Data de finalização">
       <select id="atividade">
-        <option value="">Atividade</option>
-        <option>MIGRAÇÃO</option><option>INSTALAÇÃO</option><option>MANUTENÇÃO</option><option>RETIRADA</option><option>VT</option>
+        <option value="">Selecione a atividade</option>
+        <option value="MIGRAÇÃO">MIGRAÇÃO</option>
+        <option value="INSTALAÇÃO">INSTALAÇÃO</option>
+        <option value="MANUTENÇÃO">MANUTENÇÃO</option>
+        <option value="RETIRADA">RETIRADA</option>
+        <option value="VT">VT</option>
       </select>
       <select id="status">
         <option value="">Status</option>
-        <option>ENTREGUE</option><option>CANCELADO</option><option>AGUARDANDO</option>
+        <option value="ENTREGUE">ENTREGUE</option>
+        <option value="CANCELADO">CANCELADO</option>
+        <option value="AGUARDANDO">AGUARDANDO</option>
       </select>
     </div>
-    <textarea id="observacao" placeholder="Observações"></textarea>
-    <button onclick="salvarOS()">Salvar OS</button>
+    <textarea id="observacao" placeholder="Observações e detalhes" rows="3"></textarea>
+    <button onclick="salvarOS()">💾 Salvar OS</button>
   </div>
 
   <!-- Filtros -->
   <div class="section">
-    <h2>Filtros</h2>
+    <h2>🔍 Filtros</h2>
     <div class="btn-group">
-      <input type="text" id="filtroNome" placeholder="Filtrar por Cliente">
-      <input type="text" id="filtroEndereco" placeholder="Filtrar por Endereço">
+      <input type="text" id="filtroNome" placeholder="Filtrar por cliente">
+      <input type="text" id="filtroEndereco" placeholder="Filtrar por endereço">
     </div>
     <div class="btn-group">
-      <input type="date" id="filtroDataInicio" placeholder="Data Início">
-      <input type="date" id="filtroDataFim" placeholder="Data Fim">
+      <input type="date" id="filtroDataInicio" placeholder="Data inicial">
+      <input type="date" id="filtroDataFim" placeholder="Data final">
       <select id="filtroStatus">
-        <option value="">Todos Status</option><option>ENTREGUE</option><option>CANCELADO</option><option>AGUARDANDO</option>
+        <option value="">Todos os status</option>
+        <option value="ENTREGUE">ENTREGUE</option>
+        <option value="CANCELADO">CANCELADO</option>
+        <option value="AGUARDANDO">AGUARDANDO</option>
       </select>
     </div>
-    <button onclick="carregarTabela()">Aplicar Filtros</button>
+    <button onclick="carregarTabela()" style="margin-top: 10px;">🔎 Aplicar Filtros</button>
   </div>
 
   <!-- Métricas -->
   <div class="section" id="metricas">
-    <h2>Métricas</h2>
-    <p><strong>Total:</strong> <span id="totalOS">0</span> | 
-       <strong>Entregues:</strong> <span id="entregues">0</span> | 
-       <strong>Canceladas:</strong> <span id="canceladas">0</span> | 
-       <strong>Aguardando:</strong> <span id="aguardando">0</span></p>
+    <h2>📊 Métricas</h2>
+    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+      <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; text-align: center; flex: 1; margin: 5px;">
+        <div style="font-size: 24px; font-weight: bold; color: #0056b3;" id="totalOS">0</div>
+        <div>Total OS</div>
+      </div>
+      <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; text-align: center; flex: 1; margin: 5px;">
+        <div style="font-size: 24px; font-weight: bold; color: #28a745;" id="entregues">0</div>
+        <div>Entregues</div>
+      </div>
+      <div style="background: #fff8e1; padding: 10px; border-radius: 5px; text-align: center; flex: 1; margin: 5px;">
+        <div style="font-size: 24px; font-weight: bold; color: #ffc107;" id="aguardando">0</div>
+        <div>Aguardando</div>
+      </div>
+      <div style="background: #ffebee; padding: 10px; border-radius: 5px; text-align: center; flex: 1; margin: 5px;">
+        <div style="font-size: 24px; font-weight: bold; color: #dc3545;" id="canceladas">0</div>
+        <div>Canceladas</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Tabela -->
+  <!-- Tabela de OS -->
   <div class="section">
-    <h2>Ordens de Serviço</h2>
-    <table id="tabelaOS">
-      <thead>
-        <tr><th>Data</th><th>Cliente</th><th>Endereço</th><th>Atividade</th><th>Status</th><th>Ações</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h2>📋 Ordens de Serviço</h2>
+    <div style="overflow-x: auto;">
+      <table id="tabelaOS">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th>Endereço</th>
+            <th>Atividade</th>
+            <th>Status</th>
+            <th style="width: 150px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
-
 </div>
 
 <script>
-  // Forçar logout ao iniciar (garante tela de login)
-  firebase.auth().signOut().catch(() => {});
-
-  // Configuração do Firebase (SUBSTITUA COM SEUS DADOS REAIS)
+  // Configuração do Firebase (SUBSTITUA COM SEUS DADOS)
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
+    apiKey: "SUA_CHAVE_API",
     authDomain: "SEU_PROJETO.firebaseapp.com",
     databaseURL: "https://SEU_PROJETO.firebaseio.com",
     projectId: "SEU_PROJETO",
@@ -138,88 +180,97 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // Variável global para usuário logado
+  // Variáveis globais
   let currentUser = null;
+  let osEditando = null;
 
   // Função de Login
   function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     
+    if (!email || !password) {
+      alert("Por favor, preencha e-mail e senha!");
+      return;
+    }
+
     firebase.auth().signInWithEmailAndPassword(email, password)
       .then((userCredential) => {
         currentUser = userCredential.user;
-        
-        // Verificar nível de acesso
-        db.ref('users/' + currentUser.uid).once('value').then((snapshot) => {
-          const userData = snapshot.val();
-          
-          // Mostrar app principal
-          document.getElementById('loginSection').classList.add('hidden');
-          document.getElementById('appSection').classList.remove('hidden');
-          
-          // Se for admin, mostrar painéis especiais
-          if (userData && userData.nivelAcesso === 'admin') {
-            document.getElementById('painelUsuarios').classList.remove('hidden');
-            document.getElementById('importExportSection').classList.remove('hidden');
-          }
-          
-          // Carregar dados iniciais
-          carregarTabela();
-          atualizarMetricas();
-        });
+        verificarNivelAcesso();
       })
       .catch((error) => {
-        alert('Erro ao fazer login: ' + error.message);
+        alert('Erro no login: ' + error.message);
       });
   }
 
-  // Função para resetar senha
+  // Verificar nível de acesso do usuário
+  function verificarNivelAcesso() {
+    db.ref('users/' + currentUser.uid).once('value')
+      .then((snapshot) => {
+        const userData = snapshot.val();
+        
+        // Mostrar aplicativo principal
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+        
+        // Se for admin, mostrar funções especiais
+        if (userData && userData.nivelAcesso === 'admin') {
+          document.getElementById('painelUsuarios').classList.remove('hidden');
+          document.getElementById('importExportSection').classList.remove('hidden');
+        }
+        
+        // Carregar dados
+        carregarTabela();
+        atualizarMetricas();
+      })
+      .catch(error => {
+        console.error("Erro ao verificar acesso:", error);
+      });
+  }
+
+  // Resetar senha
   function resetarSenha() {
     const email = document.getElementById('email').value;
     if (!email) {
-      alert('Digite seu e-mail para redefinir a senha');
+      alert("Digite seu e-mail para redefinir a senha");
       return;
     }
     
     firebase.auth().sendPasswordResetEmail(email)
-      .then(() => alert('E-mail de redefinição enviado!'))
-      .catch(error => alert('Erro: ' + error.message));
+      .then(() => alert("E-mail de redefinição enviado!"))
+      .catch(error => alert("Erro: " + error.message));
   }
 
-  // Função para criar usuário (somente admin)
+  // Criar novo usuário (admin)
   function criarUsuario() {
-    if (!currentUser) return;
-    
     const email = document.getElementById('novoEmail').value;
     const password = document.getElementById('novaSenha').value;
     const nivelAcesso = document.getElementById('nivelAcesso').value;
     
     if (!email || !password) {
-      alert('Preencha todos os campos!');
+      alert("Preencha todos os campos!");
       return;
     }
-    
+
     firebase.auth().createUserWithEmailAndPassword(email, password)
       .then((userCredential) => {
-        const newUser = userCredential.user;
-        
-        // Salvar informações adicionais no banco de dados
-        return db.ref('users/' + newUser.uid).set({
+        // Salvar dados adicionais do usuário
+        return db.ref('users/' + userCredential.user.uid).set({
           email: email,
           nivelAcesso: nivelAcesso,
           criadoEm: firebase.database.ServerValue.TIMESTAMP
         });
       })
       .then(() => {
-        alert('Usuário criado com sucesso!');
-        document.getElementById('novoEmail').value = '';
-        document.getElementById('novaSenha').value = '';
+        alert("Usuário criado com sucesso!");
+        document.getElementById('novoEmail').value = "";
+        document.getElementById('novaSenha').value = "";
       })
-      .catch(error => alert('Erro ao criar usuário: ' + error.message));
+      .catch(error => alert("Erro ao criar usuário: " + error.message));
   }
 
-  // Função para salvar OS
+  // Salvar OS (nova ou edição)
   function salvarOS() {
     if (!currentUser) return;
     
@@ -233,210 +284,292 @@
       status: document.getElementById('status').value,
       observacao: document.getElementById('observacao').value,
       criadoPor: currentUser.uid,
-      criadoEm: firebase.database.ServerValue.TIMESTAMP
+      atualizadoEm: firebase.database.ServerValue.TIMESTAMP
     };
-    
+
+    // Validação
     if (!osData.nomeCliente || !osData.endereco) {
-      alert('Preencha pelo menos Nome do Cliente e Endereço!');
+      alert("Preencha pelo menos Nome do Cliente e Endereço!");
       return;
     }
-    
-    db.ref('ordens-servico').push(osData)
-      .then(() => {
-        alert('OS salva com sucesso!');
-        limparFormularioOS();
-        carregarTabela();
-        atualizarMetricas();
-      })
-      .catch(error => alert('Erro ao salvar OS: ' + error.message));
+
+    // Se estiver editando
+    if (osEditando) {
+      db.ref('ordens-servico/' + osEditando).update(osData)
+        .then(() => {
+          alert("OS atualizada com sucesso!");
+          osEditando = null;
+          limparFormularioOS();
+          carregarTabela();
+          atualizarMetricas();
+        })
+        .catch(error => alert("Erro ao atualizar: " + error.message));
+    } 
+    // Se for nova OS
+    else {
+      osData.criadoEm = firebase.database.ServerValue.TIMESTAMP;
+      
+      db.ref('ordens-servico').push(osData)
+        .then(() => {
+          alert("OS cadastrada com sucesso!");
+          limparFormularioOS();
+          carregarTabela();
+          atualizarMetricas();
+        })
+        .catch(error => alert("Erro ao cadastrar: " + error.message));
+    }
   }
 
-  // Limpar formulário de OS
+  // Limpar formulário
   function limparFormularioOS() {
-    document.getElementById('dataAgendamento').value = '';
-    document.getElementById('periodo').value = 'Manhã';
-    document.getElementById('nomeCliente').value = '';
-    document.getElementById('endereco').value = '';
-    document.getElementById('dataFinalizacao').value = '';
-    document.getElementById('atividade').value = '';
-    document.getElementById('status').value = '';
-    document.getElementById('observacao').value = '';
+    document.getElementById('dataAgendamento').value = "";
+    document.getElementById('periodo').value = "Manhã";
+    document.getElementById('nomeCliente').value = "";
+    document.getElementById('endereco').value = "";
+    document.getElementById('dataFinalizacao').value = "";
+    document.getElementById('atividade').value = "";
+    document.getElementById('status').value = "";
+    document.getElementById('observacao').value = "";
+    osEditando = null;
   }
 
-  // Carregar tabela de OS
+  // Carregar tabela com filtros
   function carregarTabela() {
-    const tabela = document.getElementById('tabelaOS').getElementsByTagName('tbody')[0];
-    tabela.innerHTML = '';
+    const tabelaBody = document.querySelector('#tabelaOS tbody');
+    tabelaBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>';
     
-    let ref = db.ref('ordens-servico');
-    
-    // Aplicar filtros
+    const ref = db.ref('ordens-servico');
     const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
     const filtroEndereco = document.getElementById('filtroEndereco').value.toLowerCase();
     const filtroStatus = document.getElementById('filtroStatus').value;
     const filtroDataInicio = document.getElementById('filtroDataInicio').value;
     const filtroDataFim = document.getElementById('filtroDataFim').value;
-    
-    ref.once('value').then((snapshot) => {
-      const osList = [];
-      snapshot.forEach((childSnapshot) => {
-        const os = childSnapshot.val();
-        os.id = childSnapshot.key;
-        osList.push(os);
-      });
-      
-      // Ordenar por data (mais recente primeiro)
-      osList.sort((a, b) => new Date(b.dataAgendamento) - new Date(a.dataAgendamento));
-      
-      // Filtrar e exibir
-      osList.forEach((os) => {
+
+    ref.once('value')
+      .then((snapshot) => {
+        tabelaBody.innerHTML = '';
+        const osList = [];
+        
+        snapshot.forEach((childSnapshot) => {
+          const os = childSnapshot.val();
+          os.id = childSnapshot.key;
+          osList.push(os);
+        });
+
+        // Ordenar por data (mais recente primeiro)
+        osList.sort((a, b) => {
+          const dateA = a.dataAgendamento ? new Date(a.dataAgendamento) : 0;
+          const dateB = b.dataAgendamento ? new Date(b.dataAgendamento) : 0;
+          return dateB - dateA;
+        });
+
         // Aplicar filtros
-        if (filtroNome && !os.nomeCliente.toLowerCase().includes(filtroNome)) return;
-        if (filtroEndereco && !os.endereco.toLowerCase().includes(filtroEndereco)) return;
-        if (filtroStatus && os.status !== filtroStatus) return;
-        if (filtroDataInicio && os.dataAgendamento < filtroDataInicio) return;
-        if (filtroDataFim && os.dataAgendamento > filtroDataFim) return;
-        
-        const row = tabela.insertRow();
-        
-        row.insertCell(0).textContent = os.dataAgendamento || '-';
-        row.insertCell(1).textContent = os.nomeCliente;
-        row.insertCell(2).textContent = os.endereco;
-        row.insertCell(3).textContent = os.atividade || '-';
-        row.insertCell(4).textContent = os.status || 'AGUARDANDO';
-        
-        // Botões de ação
-        const actionsCell = row.insertCell(5);
-        actionsCell.innerHTML = `
-          <button onclick="editarOS('${os.id}')" style="padding:5px;margin:2px;">Editar</button>
-          <button onclick="excluirOS('${os.id}')" style="padding:5px;margin:2px;background:#dc3545;">Excluir</button>
-        `;
+        osList.forEach((os) => {
+          if (filtroNome && !os.nomeCliente.toLowerCase().includes(filtroNome)) return;
+          if (filtroEndereco && !os.endereco.toLowerCase().includes(filtroEndereco)) return;
+          if (filtroStatus && os.status !== filtroStatus) return;
+          if (filtroDataInicio && os.dataAgendamento < filtroDataInicio) return;
+          if (filtroDataFim && os.dataAgendamento > filtroDataFim) return;
+
+          const row = tabelaBody.insertRow();
+          
+          // Formatar data para exibição
+          let dataExibicao = '-';
+          if (os.dataAgendamento) {
+            const data = new Date(os.dataAgendamento);
+            dataExibicao = data.toLocaleDateString('pt-BR');
+          }
+
+          // Células da tabela
+          row.insertCell(0).textContent = dataExibicao;
+          row.insertCell(1).textContent = os.nomeCliente || '-';
+          row.insertCell(2).textContent = os.endereco || '-';
+          row.insertCell(3).textContent = os.atividade || '-';
+          
+          // Célula de status com cor
+          const statusCell = row.insertCell(4);
+          statusCell.textContent = os.status || 'AGUARDANDO';
+          if (os.status === 'ENTREGUE') statusCell.style.color = 'green';
+          else if (os.status === 'CANCELADO') statusCell.style.color = 'red';
+
+          // Célula de ações
+          const actionsCell = row.insertCell(5);
+          actionsCell.innerHTML = `
+            <button onclick="editarOS('${os.id}')" class="action-btn edit-btn">✏️ Editar</button>
+            <button onclick="excluirOS('${os.id}')" class="action-btn delete-btn">🗑️ Excluir</button>
+          `;
+        });
+
+        if (tabelaBody.rows.length === 0) {
+          tabelaBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma OS encontrada</td></tr>';
+        }
+      })
+      .catch(error => {
+        tabelaBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
+        console.error("Erro ao carregar OS:", error);
       });
-    });
   }
 
   // Editar OS
   function editarOS(osId) {
-    db.ref('ordens-servico/' + osId).once('value').then((snapshot) => {
-      const os = snapshot.val();
-      
-      document.getElementById('dataAgendamento').value = os.dataAgendamento || '';
-      document.getElementById('periodo').value = os.periodo || 'Manhã';
-      document.getElementById('nomeCliente').value = os.nomeCliente || '';
-      document.getElementById('endereco').value = os.endereco || '';
-      document.getElementById('dataFinalizacao').value = os.dataFinalizacao || '';
-      document.getElementById('atividade').value = os.atividade || '';
-      document.getElementById('status').value = os.status || '';
-      document.getElementById('observacao').value = os.observacao || '';
-      
-      // Scroll para o formulário
-      document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
-    });
+    db.ref('ordens-servico/' + osId).once('value')
+      .then((snapshot) => {
+        const os = snapshot.val();
+        osEditando = osId;
+        
+        // Preencher formulário
+        document.getElementById('dataAgendamento').value = os.dataAgendamento || '';
+        document.getElementById('periodo').value = os.periodo || 'Manhã';
+        document.getElementById('nomeCliente').value = os.nomeCliente || '';
+        document.getElementById('endereco').value = os.endereco || '';
+        document.getElementById('dataFinalizacao').value = os.dataFinalizacao || '';
+        document.getElementById('atividade').value = os.atividade || '';
+        document.getElementById('status').value = os.status || '';
+        document.getElementById('observacao').value = os.observacao || '';
+        
+        // Rolagem para o formulário
+        document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
+      })
+      .catch(error => alert("Erro ao carregar OS: " + error.message));
   }
 
   // Excluir OS
   function excluirOS(osId) {
-    if (confirm('Tem certeza que deseja excluir esta OS?')) {
+    if (confirm("Tem certeza que deseja excluir esta OS?\nEsta ação não pode ser desfeita.")) {
       db.ref('ordens-servico/' + osId).remove()
         .then(() => {
-          alert('OS excluída com sucesso!');
+          alert("OS excluída com sucesso!");
           carregarTabela();
           atualizarMetricas();
         })
-        .catch(error => alert('Erro ao excluir OS: ' + error.message));
+        .catch(error => alert("Erro ao excluir: " + error.message));
     }
   }
 
   // Atualizar métricas
   function atualizarMetricas() {
-    db.ref('ordens-servico').once('value').then((snapshot) => {
-      let total = 0, entregues = 0, canceladas = 0, aguardando = 0;
-      
-      snapshot.forEach((childSnapshot) => {
-        total++;
-        const status = childSnapshot.val().status;
+    db.ref('ordens-servico').once('value')
+      .then((snapshot) => {
+        let total = 0, entregues = 0, canceladas = 0, aguardando = 0;
         
-        if (status === 'ENTREGUE') entregues++;
-        else if (status === 'CANCELADO') canceladas++;
-        else aguardando++;
-      });
-      
-      document.getElementById('totalOS').textContent = total;
-      document.getElementById('entregues').textContent = entregues;
-      document.getElementById('canceladas').textContent = canceladas;
-      document.getElementById('aguardando').textContent = aguardando;
-    });
+        snapshot.forEach((childSnapshot) => {
+          total++;
+          const status = childSnapshot.val().status;
+          
+          if (status === 'ENTREGUE') entregues++;
+          else if (status === 'CANCELADO') canceladas++;
+          else aguardando++;
+        });
+        
+        document.getElementById('totalOS').textContent = total;
+        document.getElementById('entregues').textContent = entregues;
+        document.getElementById('canceladas').textContent = canceladas;
+        document.getElementById('aguardando').textContent = aguardando;
+      })
+      .catch(error => console.error("Erro ao carregar métricas:", error));
   }
 
   // Importar CSV
   function importarCSV() {
     const fileInput = document.getElementById('importCSV');
     const file = fileInput.files[0];
+    const statusElement = document.getElementById('importStatus');
     
     if (!file) {
-      alert('Nenhum arquivo selecionado!');
+      statusElement.textContent = "⚠️ Nenhum arquivo selecionado!";
+      statusElement.style.color = "red";
       return;
     }
 
+    statusElement.textContent = "⏳ Processando arquivo...";
+    statusElement.style.color = "blue";
+
     const reader = new FileReader();
     
-    reader.onload = function(e) {
-      const contents = e.target.result;
-      const lines = contents.split('\n');
-      const headers = lines[0].split(';');
-      
-      // Verificar cabeçalho do CSV
-      const expectedHeaders = ['dataAgendamento', 'periodo', 'nomeCliente', 'endereco', 
-                             'dataFinalizacao', 'atividade', 'status', 'observacao'];
-      
-      if (headers.length !== expectedHeaders.length || !headers.every((h, i) => h.trim() === expectedHeaders[i])) {
-        alert('Formato do CSV inválido! Verifique o cabeçalho.');
-        return;
-      }
-
-      // Processar cada linha do CSV (ignorando o cabeçalho)
-      const osRef = db.ref('ordens-servico');
-      let importedCount = 0;
-      let errorCount = 0;
-
-      for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim() === '') continue;
+    reader.onload = async function(e) {
+      try {
+        const contents = e.target.result;
+        const lines = contents.split('\n').filter(line => line.trim() !== '');
         
-        const values = lines[i].split(';');
-        if (values.length !== headers.length) {
-          errorCount++;
-          continue;
+        if (lines.length < 2) {
+          statusElement.textContent = "⚠️ Arquivo vazio ou formato inválido!";
+          statusElement.style.color = "red";
+          return;
         }
 
-        const osData = {
-          dataAgendamento: values[0].trim(),
-          periodo: values[1].trim(),
-          nomeCliente: values[2].trim(),
-          endereco: values[3].trim(),
-          dataFinalizacao: values[4].trim(),
-          atividade: values[5].trim(),
-          status: values[6].trim(),
-          observacao: values[7].trim(),
-          criadoPor: currentUser.uid,
-          criadoEm: firebase.database.ServerValue.TIMESTAMP
-        };
+        const headers = lines[0].split(';').map(h => h.trim());
+        const expectedHeaders = ['dataAgendamento', 'periodo', 'nomeCliente', 'endereco', 
+                               'dataFinalizacao', 'atividade', 'status', 'observacao'];
+        
+        // Verificar cabeçalho
+        if (!expectedHeaders.every(h => headers.includes(h))) {
+          statusElement.textContent = "⚠️ Cabeçalho inválido! Verifique as colunas.";
+          statusElement.style.color = "red";
+          return;
+        }
 
-        osRef.push(osData)
-          .then(() => importedCount++)
-          .catch(() => errorCount++);
+        const osRef = db.ref('ordens-servico');
+        let importedCount = 0;
+        let errorCount = 0;
+
+        // Processar linhas (ignorando cabeçalho)
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(';').map(v => v.trim());
+          
+          if (values.length < expectedHeaders.length) {
+            errorCount++;
+            continue;
+          }
+
+          // Criar objeto OS a partir do CSV
+          const osData = {};
+          expectedHeaders.forEach((header, index) => {
+            osData[header] = values[index] || '';
+          });
+
+          // Validar dados mínimos
+          if (!osData.nomeCliente || !osData.endereco) {
+            errorCount++;
+            continue;
+          }
+
+          // Adicionar metadados
+          osData.criadoPor = currentUser.uid;
+          osData.criadoEm = firebase.database.ServerValue.TIMESTAMP;
+          osData.atualizadoEm = firebase.database.ServerValue.TIMESTAMP;
+
+          try {
+            await osRef.push(osData);
+            importedCount++;
+          } catch (error) {
+            errorCount++;
+            console.error("Erro na linha " + (i+1) + ":", error);
+          }
+        }
+
+        // Atualizar interface
+        statusElement.textContent = importedCount > 0 ?
+          `✅ ${importedCount} OS importadas com sucesso! ${errorCount > 0 ? `(${errorCount} erros)` : ''}` :
+          `⚠️ Nenhuma OS importada. ${errorCount > 0 ? `(${errorCount} erros)` : ''}`;
+        
+        statusElement.style.color = importedCount > 0 ? "green" : "red";
+        
+        if (importedCount > 0) {
+          carregarTabela();
+          atualizarMetricas();
+        }
+      } catch (error) {
+        statusElement.textContent = "❌ Erro durante a importação!";
+        statusElement.style.color = "red";
+        console.error("Erro no processamento:", error);
+      } finally {
+        fileInput.value = '';
       }
-
-      // Mostrar resultado após processar todas as linhas
-      setTimeout(() => {
-        alert(`Importação concluída!\n${importedCount} OS importadas com sucesso.\n${errorCount} falhas.`);
-        carregarTabela();
-        atualizarMetricas();
-        fileInput.value = ''; // Limpar seleção de arquivo
-      }, 1000);
     };
     
     reader.onerror = function() {
-      alert('Erro ao ler o arquivo!');
+      statusElement.textContent = "❌ Erro ao ler o arquivo!";
+      statusElement.style.color = "red";
     };
     
     reader.readAsText(file);
@@ -444,78 +577,79 @@
 
   // Exportar CSV
   function exportarCSV() {
-    db.ref('ordens-servico').once('value').then((snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        alert('Nenhuma OS encontrada para exportar!');
-        return;
-      }
+    const statusElement = document.getElementById('importStatus');
+    statusElement.textContent = "⏳ Preparando exportação...";
+    statusElement.style.color = "blue";
 
-      // Criar cabeçalho do CSV
-      let csvContent = 'dataAgendamento;periodo;nomeCliente;endereco;dataFinalizacao;atividade;status;observacao\n';
-      
-      // Adicionar cada OS como uma linha no CSV
-      Object.keys(data).forEach((key) => {
-        const os = data[key];
-        csvContent += [
-          os.dataAgendamento || '',
-          os.periodo || '',
-          os.nomeCliente || '',
-          os.endereco || '',
-          os.dataFinalizacao || '',
-          os.atividade || '',
-          os.status || '',
-          os.observacao ? os.observacao.replace(/\n/g, ' ') : ''
-        ].join(';') + '\n';
+    db.ref('ordens-servico').once('value')
+      .then((snapshot) => {
+        const data = snapshot.val();
+        if (!data || Object.keys(data).length === 0) {
+          statusElement.textContent = "⚠️ Nenhuma OS para exportar!";
+          statusElement.style.color = "orange";
+          return;
+        }
+
+        // Cabeçalho do CSV
+        const headers = [
+          'dataAgendamento', 'periodo', 'nomeCliente', 'endereco',
+          'dataFinalizacao', 'atividade', 'status', 'observacao'
+        ];
+        let csvContent = headers.join(';') + '\n';
+        
+        // Adicionar cada OS
+        Object.values(data).forEach((os) => {
+          const row = headers.map(header => {
+            // Tratar observações (remover quebras de linha)
+            if (header === 'observacao' && os[header]) {
+              return `"${os[header].replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`;
+            }
+            return os[header] || '';
+          });
+          csvContent += row.join(';') + '\n';
+        });
+
+        // Criar e baixar arquivo
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        const hoje = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `OS_Nexus_${hoje}.csv`);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        statusElement.textContent = `✅ Exportação concluída! ${Object.keys(data).length} OS exportadas.`;
+        statusElement.style.color = "green";
+      })
+      .catch(error => {
+        statusElement.textContent = "❌ Erro na exportação!";
+        statusElement.style.color = "red";
+        console.error("Erro ao exportar:", error);
       });
-
-      // Criar e baixar o arquivo
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `OS_Nexus_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
   }
 
   // Verificar autenticação ao carregar a página
   firebase.auth().onAuthStateChanged((user) => {
     if (user) {
       currentUser = user;
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('appSection').classList.remove('hidden');
-      
-      // Verificar se é admin
-      db.ref('users/' + user.uid).once('value').then((snapshot) => {
-        const userData = snapshot.val();
-        if (userData && userData.nivelAcesso === 'admin') {
-          document.getElementById('painelUsuarios').classList.remove('hidden');
-          document.getElementById('importExportSection').classList.remove('hidden');
-        }
-        
-        carregarTabela();
-        atualizarMetricas();
-      });
+      verificarNivelAcesso();
     } else {
-      // Mostrar tela de login se não estiver autenticado
+      // Mostrar tela de login
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('appSection').classList.add('hidden');
     }
   });
 
-  // Adicionar event listeners para filtros
-  document.getElementById('filtroNome').addEventListener('keyup', carregarTabela);
-  document.getElementById('filtroEndereco').addEventListener('keyup', carregarTabela);
+  // Adicionar listeners para os filtros
+  document.getElementById('filtroNome').addEventListener('input', carregarTabela);
+  document.getElementById('filtroEndereco').addEventListener('input', carregarTabela);
   document.getElementById('filtroStatus').addEventListener('change', carregarTabela);
   document.getElementById('filtroDataInicio').addEventListener('change', carregarTabela);
   document.getElementById('filtroDataFim').addEventListener('change', carregarTabela);
 </script>
-
 </body>
 </html>
